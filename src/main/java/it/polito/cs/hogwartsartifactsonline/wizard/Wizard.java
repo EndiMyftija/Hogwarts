@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,7 +21,7 @@ public class Wizard implements Serializable {
     //Delegate to the other table the responsibility of holding the foreign key.
     //Cascade says whenever I save a Wizard into my database then all of his artifacts will be saved automatically
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, mappedBy = "owner")
-    private List<Artifact> artifacts;
+    private List<Artifact> artifacts = new ArrayList<>();
 
     public Wizard() {
     }
@@ -48,5 +49,14 @@ public class Wizard implements Serializable {
 
     public void setArtifacts(List<Artifact> artifacts) {
         this.artifacts = artifacts;
+    }
+
+    public void addArtifact(Artifact artifact) {
+        artifact.setOwner(this);
+        this.artifacts.add(artifact);
+    }
+
+    public Integer getNumArtifacts() {
+        return artifacts.size();
     }
 }

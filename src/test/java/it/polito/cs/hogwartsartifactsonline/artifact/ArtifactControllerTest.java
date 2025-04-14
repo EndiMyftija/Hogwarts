@@ -106,7 +106,7 @@ class ArtifactControllerTest {
         this.mockMvc.perform(get("/api/v1/artifacts/1250808601744904191").accept(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.flag").value(false))
                 .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND))
-                .andExpect(jsonPath("$.message").value("Could not find artifact by Id 1250808601744904191 :("))
+                .andExpect(jsonPath("$.message").value("Could not find artifact by id 1250808601744904191 :("))
                 .andExpect(jsonPath("$.data").isEmpty());
     }
 }
