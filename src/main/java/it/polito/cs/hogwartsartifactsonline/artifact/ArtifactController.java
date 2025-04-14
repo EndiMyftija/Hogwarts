@@ -1,12 +1,12 @@
 package it.polito.cs.hogwartsartifactsonline.artifact;
 
+import it.polito.cs.hogwartsartifactsonline.artifact.converter.ArtifactDtoToArtifactConverter;
 import it.polito.cs.hogwartsartifactsonline.artifact.converter.ArtifactToArtifactDtoConverter;
 import it.polito.cs.hogwartsartifactsonline.artifact.dto.ArtifactDto;
 import it.polito.cs.hogwartsartifactsonline.system.Result;
 import it.polito.cs.hogwartsartifactsonline.system.StatusCode;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ArtifactController {
@@ -15,9 +15,13 @@ public class ArtifactController {
 
     private final ArtifactToArtifactDtoConverter artifactToArtifactDtoConverter;
 
-    public ArtifactController(ArtifactService artifactService, ArtifactToArtifactDtoConverter artifactToArtifactDtoConverter) {
+    private final ArtifactDtoToArtifactConverter artifactDtoToArtifactConverter;
+
+
+    public ArtifactController(ArtifactService artifactService, ArtifactToArtifactDtoConverter artifactToArtifactDtoConverter, ArtifactDtoToArtifactConverter artifactDtoToArtifactConverter) {
         this.artifactService = artifactService;
         this.artifactToArtifactDtoConverter = artifactToArtifactDtoConverter;
+        this.artifactDtoToArtifactConverter = artifactDtoToArtifactConverter;
     }
 
     @GetMapping("/api/v1/artifacts/{artifactId}")
@@ -28,5 +32,17 @@ public class ArtifactController {
         return new Result(true, StatusCode.SUCCESS, "Find one success", artifactDto);
     }
 
+    @PostMapping("/api/v1/artifacts")
+    public Result addArtifact(@Valid @RequestBody ArtifactDto artifactDto) {
+        Artifact artifact = artifactDtoToArtifactConverter.convert(artifactDto);
+        Artifact savedArtifact = artifactService.saveArtifact(artifact);
+        ArtifactDto savedArtifactDto = artifactToArtifactDtoConverter.convert(savedArtifact);
+        return new Result(true, StatusCode.SUCCESS, "Add one success", savedArtifactDto);
+    }
+
+    @PutMapping("/api/v1/{artifactId}")
+    public Result updateArtifact(@Valid @RequestBody ArtifactDto artifactDto, @PathVariable String artifactId) {
+        return null;
+    }
     
 }

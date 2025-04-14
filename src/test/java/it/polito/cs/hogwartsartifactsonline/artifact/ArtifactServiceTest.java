@@ -1,5 +1,6 @@
 package it.polito.cs.hogwartsartifactsonline.artifact;
 
+import it.polito.cs.hogwartsartifactsonline.artifact.utils.IdWorker;
 import it.polito.cs.hogwartsartifactsonline.wizard.Wizard;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,11 @@ class ArtifactServiceTest {
     @Mock
     ArtifactRepository artifactRepository;
 
+    @Mock
+    IdWorker idWorker;
+
+    //InjectMoccks tells java to inject the two mocks (ArtifactRepository and IdWorker into artifactService)
+    //because artifactService needs those two objects.
     @InjectMocks
     ArtifactService artifactService;
 
@@ -85,5 +91,81 @@ class ArtifactServiceTest {
                 .hasMessage("Could not find artifact by id 123456789 :(");
 
         verify(artifactRepository, times(1)).findById("123456789");
+    }
+
+    @Test
+    void testSaveSuccess() {
+        //given
+        Artifact newArtifact = new Artifact();
+        newArtifact.setName("Artifact 3");
+        newArtifact.setDescription("Description...");
+        newArtifact.setImageUrl("ImageUrl...");
+
+        given(artifactRepository.save(newArtifact)).willReturn(newArtifact);
+        given(idWorker.nextId()).willReturn(123456L);
+        //when
+        Artifact returnedArtifact = artifactService.saveArtifact(newArtifact);
+
+        //then
+        assertThat(returnedArtifact.getId()).isEqualTo("123456");
+        assertThat(returnedArtifact.getName()).isEqualTo(newArtifact.getName());
+        assertThat(returnedArtifact.getDescription()).isEqualTo(newArtifact.getDescription());
+        assertThat(returnedArtifact.getImageUrl()).isEqualTo(newArtifact.getImageUrl());
+
+        verify(artifactRepository, times(1)).save(newArtifact);
+    }
+
+    @Test
+    void testUpdateSuccess() {
+        //given
+        Artifact oldArtifact = new Artifact();
+        oldArtifact.setId("123456789");
+        oldArtifact.setName("Invisibility Cloak");
+        oldArtifact.setDescription("An invisibility cloak is used to make the wearer invisible.");
+        oldArtifact.setImageUrl("ImageUrl");
+
+        Artifact updatedArtifact = new Artifact();
+        updatedArtifact.setId("123456789");
+        updatedArtifact.setName("Invisibility Cloak");
+        updatedArtifact.setDescription("A new description.");
+        updatedArtifact.setImageUrl("ImageUrl");
+
+        given(artifactRepository.findById("123456789")).willReturn(Optional.of(oldArtifact));
+        given(artifactRepository.save(oldArtifact)).willReturn(oldArtifact);
+        //when
+        Artifact returnedArtifact = artifactService.updateArtifact(updatedArtifact, "123456789");
+
+        //then
+        assertThat(returnedArtifact.getId()).isEqualTo(updatedArtifact.getId());
+        assertThat(returnedArtifact.getName()).isEqualTo(updatedArtifact.getName());
+        assertThat(returnedArtifact.getDescription()).isEqualTo(updatedArtifact.getDescription());
+        assertThat(returnedArtifact.getImageUrl()).isEqualTo(updatedArtifact.getImageUrl());
+
+        verify(artifactRepository, times(1)).findById("123456789");
+        verify(artifactRepository, times(1)).save(oldArtifact);
+    }
+
+    @Test
+    void testUpdateNotFound() {
+        //given
+        Artifact oldArtifact = new Artifact();
+        oldArtifact.setId("123456789");
+        oldArtifact.setName("Invisibility Cloak");
+        oldArtifact.setDescription("An invisibility cloak is used to make the wearer invisible.");
+        oldArtifact.setImageUrl("ImageUrl");
+
+        Artifact updatedArtifact = new Artifact();
+        updatedArtifact.setId("123456789");
+        updatedArtifact.setName("Invisibility Cloak");
+        updatedArtifact.setDescription("A new description.");
+        updatedArtifact.setImageUrl("ImageUrl");
+
+        given(artifactRepository.findById(Mockito.any(String.class))).willReturn(Optional.empty());
+        //when
+        Throwable thrown = catchThrowable(() -> artifactService.updateArtifact(updatedArtifact, "123456789"));
+
+        //Then
+        assertThat(thrown).isInstanceOf(ArtifactNotFoundException.class)
+                .hasMessage("Could not find artifact by id 123456789 :(");
     }
 }

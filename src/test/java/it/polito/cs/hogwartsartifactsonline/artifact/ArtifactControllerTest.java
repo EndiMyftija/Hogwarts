@@ -1,9 +1,12 @@
 package it.polito.cs.hogwartsartifactsonline.artifact;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polito.cs.hogwartsartifactsonline.artifact.dto.ArtifactDto;
 import it.polito.cs.hogwartsartifactsonline.system.StatusCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +20,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
@@ -28,6 +32,9 @@ class ArtifactControllerTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     List<Artifact> artifacts;
 
@@ -108,5 +115,37 @@ class ArtifactControllerTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND))
                 .andExpect(jsonPath("$.message").value("Could not find artifact by id 1250808601744904191 :("))
                 .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    void testAddArtifactSuccess() throws Exception{
+        //given
+        ArtifactDto artifactDto = new ArtifactDto(null,
+                "Rememberall",
+                "Some Description",
+                "ImageUrl",
+                null);
+
+        String json = this.objectMapper.writeValueAsString(artifactDto);
+
+        Artifact a = new Artifact();
+        a.setId("123456789");
+        a.setName("Rememberall");
+        a.setDescription("Some description");
+        a.setImageUrl("ImageUrl");
+
+        given(this.artifactService.saveArtifact(Mockito.any(Artifact.class))).willReturn(a);
+        //when and then
+        //Slight issue: MockMVC can perform HTTP put requests, but it cannot put the artifactDto immediately into the request body.
+        //In order to do that, we have to serialize the object into JSON first
+
+        mockMvc.perform(post("/api/v1/artifacts").contentType(MediaType.APPLICATION_JSON).content(json).accept(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.flag").value(true))
+                .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                .andExpect(jsonPath("$.message").value("Add one success"))
+                .andExpect(jsonPath("$.data.id").value(a.getId()))
+                .andExpect(jsonPath("$.data.name").value(a.getName()))
+                .andExpect(jsonPath("$.data.description").value(a.getDescription()))
+                .andExpect(jsonPath("$.data.imageUrl").value(a.getImageUrl()));
     }
 }
