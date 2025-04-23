@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/artifacts")
+@RequestMapping("${api.endpoint.base-url}/artifacts")
 public class ArtifactController {
 
     private final ArtifactService artifactService;
@@ -29,39 +29,43 @@ public class ArtifactController {
     }
 
     @GetMapping("/{artifactId}")
-    public Result findArtifactById(@PathVariable String artifactId) {
-        Artifact foundArtifact = artifactService.findArtifactById(artifactId);
-        ArtifactDto artifactDto = artifactToArtifactDtoConverter.convert(foundArtifact);
-        //The controller makes sure to transform the Result POJO to serialized JSON object.
-        return new Result(true, StatusCode.SUCCESS, "Find one success", artifactDto);
+    public Result findArtifactById(@PathVariable String artifactId){
+        Artifact foundArtifact = this.artifactService.findById(artifactId);
+        ArtifactDto artifactDto = this.artifactToArtifactDtoConverter.convert(foundArtifact);
+        return new Result(true, StatusCode.SUCCESS, "Find One Success", artifactDto);
     }
 
-    @GetMapping()
-    public Result findAllArtifacts() {
-        List<ArtifactDto> artifactsDto = artifactService.findAllArtifacts().stream().map(artifactToArtifactDtoConverter::convert).collect(Collectors.toList());
-        return new Result(true, StatusCode.SUCCESS, "Find all success", artifactsDto);
+    @GetMapping
+    public Result findAllArtifacts(){
+        List<Artifact> foundArtifacts = this.artifactService.findAll();
+        // Convert foundArtifacts to a list of artifactDtos
+        List<ArtifactDto> artifactDtos = foundArtifacts.stream()
+                .map(this.artifactToArtifactDtoConverter::convert)
+                .collect(Collectors.toList());
+        return new Result(true, StatusCode.SUCCESS, "Find All Success", artifactDtos);
     }
 
-    @PostMapping()
-    public Result addArtifact(@Valid @RequestBody ArtifactDto artifactDto) {
-        Artifact artifact = artifactDtoToArtifactConverter.convert(artifactDto);
-        Artifact savedArtifact = artifactService.saveArtifact(artifact);
-        ArtifactDto savedArtifactDto = artifactToArtifactDtoConverter.convert(savedArtifact);
-        return new Result(true, StatusCode.SUCCESS, "Add one success", savedArtifactDto);
+    @PostMapping
+    public Result addArtifact(@Valid @RequestBody ArtifactDto artifactDto){
+        // Convert artifactDto to artifact
+        Artifact newArtifact = this.artifactDtoToArtifactConverter.convert(artifactDto);
+        Artifact savedArtifact = this.artifactService.save(newArtifact);
+        ArtifactDto savedArtifactDto = this.artifactToArtifactDtoConverter.convert(savedArtifact);
+        return new Result(true, StatusCode.SUCCESS, "Add Success", savedArtifactDto) ;
     }
 
     @PutMapping("/{artifactId}")
-    public Result updateArtifact(@Valid @RequestBody ArtifactDto artifactDto, @PathVariable String artifactId) {
-        Artifact artifact = artifactDtoToArtifactConverter.convert(artifactDto);
-        Artifact result = artifactService.updateArtifact(artifact, artifactId);
-        ArtifactDto resultDto = artifactToArtifactDtoConverter.convert(result);
-        return new Result(true, StatusCode.SUCCESS, "Update one success", resultDto);
+    public Result updateArtifact(@PathVariable String artifactId, @Valid @RequestBody ArtifactDto artifactDto){
+        Artifact update = this.artifactDtoToArtifactConverter.convert(artifactDto);
+        Artifact updatedArtifact = this.artifactService.update(artifactId, update);
+        ArtifactDto updatedArtifactDto = this.artifactToArtifactDtoConverter.convert(updatedArtifact);
+        return new Result(true, StatusCode.SUCCESS, "Update Success", updatedArtifactDto);
     }
 
     @DeleteMapping("/{artifactId}")
-    public Result deleteArtifact(@PathVariable String artifactId) {
-        artifactService.deleteArtifact(artifactId);
-        return new Result(true, StatusCode.SUCCESS, "Deleted artifact with id " + artifactId);
+    public Result deleteArtifact(@PathVariable String artifactId){
+        this.artifactService.delete(artifactId);
+        return new Result(true, StatusCode.SUCCESS, "Delete Success");
     }
-    
+
 }
