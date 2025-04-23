@@ -1,5 +1,7 @@
 package it.polito.cs.hogwartsartifactsonline.wizard;
 
+import it.polito.cs.hogwartsartifactsonline.artifact.Artifact;
+import it.polito.cs.hogwartsartifactsonline.artifact.ArtifactRepository;
 import it.polito.cs.hogwartsartifactsonline.system.exception.ObjectNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,9 @@ class WizardServiceTest {
 
     @Mock
     WizardRepository wizardRepository;
+
+    @Mock
+    ArtifactRepository artifactRepository;
 
     @InjectMocks
     WizardService wizardService;
@@ -191,6 +196,80 @@ class WizardServiceTest {
 
         // Then
         verify(this.wizardRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void testAssignArtifactSuccess() {
+        //Given
+        Wizard wizard1 = new Wizard();
+        wizard1.setId(1);
+        wizard1.setName("Albus Dumbledore");
+
+        Wizard wizard2 = new Wizard();
+        wizard2.setId(2);
+        wizard2.setName("Harry Potter");
+
+        Artifact a1 = new Artifact();
+        a1.setId("1250808601744904191");
+        a1.setName("Deluminator");
+        a1.setDescription("A Deluminator is a device invented by Albus Dumbledore that resembles a cigarette lighter. It is used to remove or absorb (as well as return) the light from any light source to provide cover to the user.");
+        a1.setImageUrl("ImageUrl");
+
+        wizard1.addArtifact(a1);
+
+        given(this.artifactRepository.findById("1250808601744904191")).willReturn(Optional.of(a1));
+        given(this.wizardRepository.findById(2)).willReturn(Optional.of(wizard2));
+        //When
+        this.wizardService.assignArtifact(2, "1250808601744904191");
+        //Then
+        assertThat(wizard2.getArtifacts().contains(a1)).isTrue();
+        assertThat(wizard1.getArtifacts().contains(a1)).isFalse();
+        assertThat(a1.getOwner()).isEqualTo(wizard2);
+    }
+
+    @Test
+    void testAssignArtifactErrorWithNonExistentWizardId() {
+        //Given
+        Wizard wizard1 = new Wizard();
+        wizard1.setId(1);
+        wizard1.setName("Albus Dumbledore");
+
+        Artifact a1 = new Artifact();
+        a1.setId("1250808601744904191");
+        a1.setName("Deluminator");
+        a1.setDescription("A Deluminator is a device invented by Albus Dumbledore that resembles a cigarette lighter. It is used to remove or absorb (as well as return) the light from any light source to provide cover to the user.");
+        a1.setImageUrl("ImageUrl");
+
+        wizard1.addArtifact(a1);
+
+        given(this.artifactRepository.findById("1250808601744904191")).willReturn(Optional.of(a1));
+        given(this.wizardRepository.findById(2)).willReturn(Optional.empty());
+        //When
+        Throwable thrown = catchThrowable(() ->this.wizardService.assignArtifact(2, "1250808601744904191"));
+        //Then
+        assertThat(thrown).isInstanceOf(ObjectNotFoundException.class)
+                        .hasMessage("Could not find wizard with Id 2 :(");
+        assertThat(wizard1.getArtifacts().contains(a1)).isTrue();
+        assertThat(a1.getOwner()).isEqualTo(wizard1);
+    }
+
+    @Test
+    void testAssignArtifactErrorWithNonExistentArtifactId() {
+        //Given
+        Wizard wizard1 = new Wizard();
+        wizard1.setId(1);
+        wizard1.setName("Albus Dumbledore");
+
+        Wizard wizard2 = new Wizard();
+        wizard2.setId(2);
+        wizard2.setName("Harry Potter");
+
+        given(this.artifactRepository.findById("1250808601744904191")).willThrow(new ObjectNotFoundException("artifact", "1250808601744904191"));
+        //When
+        Throwable thrown = catchThrowable(() ->this.wizardService.assignArtifact(2, "1250808601744904191"));
+        //Then
+        assertThat(thrown).isInstanceOf(ObjectNotFoundException.class)
+                .hasMessage("Could not find artifact with Id 1250808601744904191 :(");
     }
 
 }
