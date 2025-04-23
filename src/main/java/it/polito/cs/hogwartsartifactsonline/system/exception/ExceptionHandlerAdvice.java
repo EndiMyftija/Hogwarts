@@ -1,6 +1,5 @@
 package it.polito.cs.hogwartsartifactsonline.system.exception;
 
-import it.polito.cs.hogwartsartifactsonline.artifact.ArtifactNotFoundException;
 import it.polito.cs.hogwartsartifactsonline.system.Result;
 import it.polito.cs.hogwartsartifactsonline.system.StatusCode;
 import org.springframework.http.HttpStatus;
@@ -18,22 +17,29 @@ import java.util.Map;
 @RestControllerAdvice
 public class ExceptionHandlerAdvice {
 
-    @ExceptionHandler(ArtifactNotFoundException.class)
+    @ExceptionHandler(ObjectNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    Result handleArtifactNotFoundException(ArtifactNotFoundException ex) {
+    Result handleObjectNotFoundException(ObjectNotFoundException ex){
         return new Result(false, StatusCode.NOT_FOUND, ex.getMessage());
     }
 
+    /**
+     * This handles invalid inputs.
+     *
+     * @param ex
+     * @return
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     Result handleValidationException(MethodArgumentNotValidException ex) {
         List<ObjectError> errors = ex.getBindingResult().getAllErrors();
         Map<String, String> map = new HashMap<>(errors.size());
-        errors.forEach(error -> {
+        errors.forEach((error) -> {
             String key = ((FieldError) error).getField();
-            String value = error.getDefaultMessage();
-            map.put(key, value);
+            String val = error.getDefaultMessage();
+            map.put(key, val);
         });
         return new Result(false, StatusCode.INVALID_ARGUMENT, "Provided arguments are invalid, see data for details.", map);
     }
+
 }
